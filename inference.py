@@ -4,21 +4,25 @@ import numpy as np
 import tensorflow as tf
 import mediapipe as mp
 
+
 MODEL_PATH = "ISL_INCLUDE_NEW.keras"
-LABEL_MAP_PATH = "label_map_tamil.json"
+
+LABEL_MAP_PATHS = {
+    "english": "label_map_english.json",
+    "tamil": "label_map_tamil.json",
+    "hindi": "label_map_hindi.json"
+}
 
 MAX_LEN = 300
 FEATURE_SIZE = 1662
 
 mp_holistic = mp.solutions.holistic
 
+
 model = tf.keras.models.load_model(
     MODEL_PATH,
     compile=False
 )
-
-with open(LABEL_MAP_PATH, "r", encoding="utf-8") as f:
-    label_map = json.load(f)
 
 
 def read_video_frames(video_path, max_duration_sec=7):
@@ -118,7 +122,14 @@ def extract_landmarks(frames):
     )
 
 
-def predict_video(video_path):
+def predict_video(video_path, language="english"):
+
+    if language not in LABEL_MAP_PATHS:
+        raise ValueError(
+            f"Unsupported language: {language}. "
+            f"Supported languages: {list(LABEL_MAP_PATHS.keys())}"
+        )
+
     frames = read_video_frames(video_path)
 
     if len(frames) == 0:
@@ -151,6 +162,15 @@ def predict_video(video_path):
     class_id = int(np.argmax(prediction))
     confidence = float(np.max(prediction))
 
+    label_map_path = LABEL_MAP_PATHS[language]
+
+    with open(
+        label_map_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+        label_map = json.load(f)
+
     label = label_map.get(
         str(class_id),
         f"Class {class_id}"
@@ -159,10 +179,6 @@ def predict_video(video_path):
     return {
         "class_id": class_id,
         "label": label,
-        "confidence": confidence
+        "confidence": confidence,
+        "language": language
     }
-
-
-if __name__ == "__main__":
-    result = predict_video("test.mov")
-    print(result)

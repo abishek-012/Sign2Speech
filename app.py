@@ -1,12 +1,15 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-import shutil
 import os
+import shutil
 import uuid
+
+from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 
 from inference import predict_video
 
-app = FastAPI(title="ISL Sign Recognition API")
+
+app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,47 +19,92 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+os.makedirs(
+    UPLOAD_DIR,
+    exist_ok=True
+)
 
 
 @app.get("/")
 def root():
     return {
-        "message": "ISL Sign Recognition API is running"
+        "message": "ISL Sign2Speech Backend is running"
+    }
+
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy"
     }
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(
+    file: UploadFile = File(...),
+    language: str = Form("english")
+):
 
-    extension = os.path.splitext(file.filename or "")[1].lower()
+    allowed_languages = {
+        "english",
+        "tamil",
+        "hindi"
+    }
 
-    allowed_extensions = {".mp4", ".mov", ".avi", ".webm"}
+    language = language.lower().strip()
 
-    if extension not in allowed_extensions:
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported video format"
-        )
+    if language not in allowed_languages:
+        return {
+            "error": "Unsupported language",
+            "supported_languages": list(allowed_languages)
+        }
 
-    filename = f"{uuid.uuid4()}{extension}"
-    video_path = os.path.join(UPLOAD_DIR, filename)
+    file_extension = os.path.splitext(
+        file.filename
+    )[1]
+
+    if not file_extension:
+        file_extension = ".mp4"
+
+    filename = (
+        f"{uuid.uuid4()}"
+        f"{file_extension}"
+    )
+
+    video_path = os.path.join(
+        UPLOAD_DIR,
+        filename
+    )
 
     try:
-        with open(video_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
 
-        result = predict_video(video_path)
+        with open(
+            video_path,
+            "wb"
+        ) as buffer:
+
+            shutil.copyfileobj(
+                file.file,
+                buffer
+            )
+
+        result = predict_video(
+            video_path,
+            language
+        )
 
         return result
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+
+        return {
+            "error": str(e)
+        }
 
     finally:
+
         if os.path.exists(video_path):
             os.remove(video_path)
