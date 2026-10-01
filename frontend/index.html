@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign2Speech — Indian Sign Language Translator</title>
+  <meta name="description"
+    content="Sign2Speech is an AI-powered Indian Sign Language (ISL) to text translation application. Record or upload a sign language video and get instant predictions in English, Tamil, or Hindi." />
+  <meta name="keywords" content="Indian Sign Language, ISL, Sign to Text, Sign Translation, Accessibility, AI" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- Animated background orbs -->
+  <div class="bg-orbs" aria-hidden="true">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="app-wrapper">
+
+    <!-- ── HEADER ── -->
+    <header class="header" role="banner">
+      <div class="header-center">
+        <h1 class="logo-title">Sign2Speech</h1>
+        <p class="logo-subtitle">Indian Sign Language → Text</p>
+      </div>
+      <div class="header-badge">
+        <span class="badge-dot" id="backendStatus" aria-label="Backend status indicator"></span>
+        <span class="badge-label" id="backendStatusLabel">Connecting…</span>
+      </div>
+    </header>
+
+    <!-- ── MAIN CONTENT ── -->
+    <main class="main-grid" role="main">
+
+      <!-- LEFT COLUMN: Controls -->
+      <section class="card panel-left" aria-label="Recording controls">
+
+        <!-- Language Selection -->
+        <div class="section-block">
+          <label class="field-label" for="languageSelect">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+            </svg>
+            Output Language
+          </label>
+          <div class="select-wrapper">
+            <select id="languageSelect" class="language-select" aria-label="Select output language">
+              <option value="english" selected>🇬🇧 English</option>
+              <option value="tamil">🇮🇳 Tamil</option>
+              <option value="hindi">🇮🇳 Hindi</option>
+            </select>
+            <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Video Preview -->
+        <div class="section-block">
+          <label class="field-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <polygon points="23 7 16 12 23 17 23 7" />
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+            </svg>
+            Video Preview
+          </label>
+          <div class="video-container" id="videoContainer" role="region" aria-label="Video preview area">
+            <video id="videoPreview" class="video-element" autoplay muted playsinline
+              aria-label="Live camera or uploaded video preview"></video>
+            <div class="video-placeholder" id="videoPlaceholder" aria-live="polite">
+              <div class="placeholder-icon" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+                  <polygon points="23 7 16 12 23 17 23 7" />
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                </svg>
+              </div>
+              <p class="placeholder-text">No video active</p>
+              <p class="placeholder-hint">Record from camera or upload a file</p>
+            </div>
+            <div class="recording-badge" id="recordingBadge" aria-live="assertive" aria-label="Recording status" hidden>
+              <span class="rec-dot" aria-hidden="true"></span>
+              <span>REC</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Record Controls -->
+        <div class="section-block">
+          <label class="field-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+            </svg>
+            Record from Camera
+          </label>
+          <div class="button-row">
+            <button id="recordBtn" class="btn btn-record" onclick="startRecording()"
+              aria-label="Start recording from camera">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <circle cx="12" cy="12" r="8" />
+              </svg>
+              Record
+            </button>
+            <button id="stopBtn" class="btn btn-stop" onclick="stopRecording()" disabled aria-label="Stop recording">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+              </svg>
+              Stop
+            </button>
+          </div>
+        </div>
+
+        <!-- Upload Control -->
+        <div class="section-block">
+          <label class="field-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Upload Existing Video
+          </label>
+          <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()"
+            aria-label="Upload a video file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              aria-hidden="true">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Choose Video File
+          </button>
+          <input type="file" id="fileInput" accept="video/*" onchange="handleFileUpload(event)" style="display:none"
+            aria-label="Video file input" />
+          <p class="file-name-display" id="fileNameDisplay" aria-live="polite"></p>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider" role="separator"></div>
+
+        <!-- Predict Button -->
+        <button id="predictBtn" class="btn btn-predict" onclick="predictSign()" disabled
+          aria-label="Send video to backend for sign prediction">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            aria-hidden="true">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+          Predict Sign
+        </button>
+
+        <!-- Error message -->
+        <div class="error-box" id="errorBox" role="alert" aria-live="assertive" hidden>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="errorMessage"></span>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: Results -->
+      <section class="panel-right" aria-label="Prediction results">
+
+        <!-- Loading State -->
+        <div class="card result-card loading-card" id="loadingCard" hidden aria-live="polite" aria-busy="true"
+          role="status">
+          <div class="loading-animation">
+            <div class="pulse-ring" aria-hidden="true"></div>
+            <div class="pulse-ring pulse-ring-2" aria-hidden="true"></div>
+            <svg class="loading-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="1.5" aria-hidden="true">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <p class="loading-title">Analyzing Sign…</p>
+          <p class="loading-sub">Running MediaPipe landmark extraction and model inference. This may take a moment.</p>
+          <div class="progress-bar-wrap" aria-hidden="true">
+            <div class="progress-bar-fill"></div>
+          </div>
+        </div>
+
+        <!-- Results Card (hidden until prediction arrives) -->
+        <div class="card result-card" id="resultCard" hidden aria-live="polite" role="region"
+          aria-label="Prediction result">
+          <div class="result-header">
+            <div class="result-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
+            </div>
+            <h2 class="result-title">Prediction Result</h2>
+            <button class="clear-btn" id="clearBtn" onclick="clearResult()"
+              aria-label="Clear prediction result">✕</button>
+          </div>
+
+          <div class="result-label-box" aria-label="Predicted sign label">
+            <p class="result-label-heading">Predicted Sign</p>
+            <p class="result-label-value" id="resultLabel">—</p>
+          </div>
+
+          <div class="result-stats" role="list">
+            <div class="stat-chip" role="listitem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              <div>
+                <p class="stat-name">Confidence</p>
+                <p class="stat-val" id="resultConfidence">—</p>
+              </div>
+            </div>
+            <div class="stat-chip" role="listitem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path
+                  d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+              </svg>
+              <div>
+                <p class="stat-name">Language</p>
+                <p class="stat-val" id="resultLanguage">—</p>
+              </div>
+            </div>
+            <div class="stat-chip" role="listitem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <div>
+                <p class="stat-name">Class ID</p>
+                <p class="stat-val" id="resultClassId">—</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confidence Bar -->
+          <div class="conf-bar-section" aria-label="Confidence bar">
+            <div class="conf-bar-label">
+              <span>Confidence Level</span>
+              <span id="confBarPct">0%</span>
+            </div>
+            <div class="conf-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"
+              id="confBarTrack">
+              <div class="conf-bar-fill" id="confBarFill"></div>
+            </div>
+          </div>
+
+          <p class="result-footer">Powered by TensorFlow + MediaPipe Holistic · ISL Model</p>
+        </div>
+
+        <!-- Empty state when no result yet -->
+        <div class="card result-card empty-result" id="emptyResult" aria-label="Awaiting prediction">
+          <div class="empty-icon" aria-hidden="true">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
+          </div>
+          <p class="empty-title">Awaiting Prediction</p>
+          <p class="empty-hint">Add a video and click "Predict Sign" to see the ISL translation here.</p>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
